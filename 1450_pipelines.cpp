@@ -1,47 +1,47 @@
 #include <iostream>
 #include <set>
 #include <vector>
+#include <unordered_set>
 
 using namespace std;
 
-static const long long INFINITY = 120000000;
+static const long INFINITY = 120000000;
 
 struct Node {
-	int parent;
-	long long total_path_weight;
-	set<int> adj_nodes;
+	int parent = -1;
+	long total_path_weight = INFINITY;
+	unordered_set<int> adj_nodes;
 	long incl_nodes_count = 0;
 };
 
-struct ListNode {
-	int node_idx;
-	ListNode* next;
-};
 
 class LinkedList {
 	private:
-		ListNode* head;
-		ListNode* tail;
-		size_t size;
+		struct ListNode {
+			int node_idx;
+			ListNode* next;
+		};
+
+		ListNode* head = NULL;
+		ListNode* tail = NULL;
+		size_t size = 0;
 
 	public:
-		LinkedList() {
-			size = 0;
-			head = tail = NULL;
-		}
+		LinkedList() { }
 
 		void push_back( int const node_idx ) {
-			if ( tail == NULL ) {
+
+			if ( size == 0 ) {
 				head = tail = new ListNode;
 				tail-> next = NULL;
 				tail-> node_idx = node_idx;
 
 			} else {
 				tail-> next = new ListNode;
-				tail-> next-> node_idx = node_idx;
-
-				tail-> next-> next = NULL;
 				tail = tail-> next;
+
+				tail-> node_idx = node_idx;
+				tail-> next = NULL;
 			}
 
 			size++;
@@ -59,56 +59,45 @@ class LinkedList {
 			return size == 0;
 		}
 
+		int get_size() {
+			return size;
+		}
+
 };
 
-class Queue {
-	private:
-		vector<int> container;
-		int tail;
-		int head;
-
-	public:
-		Queue() { 
-			tail = -1;
-			head = 0;
-		}
-
-		void push_back( int const i ) {
-			container.push_back(i);
-			tail++;
-		}
-
-		int get() {
-			return container[ head++ ];
-		}
-
-		bool is_empty() {
-			return tail < head;
-		}
-
-		void print() {
-			for ( size_t i = 0; i < container.size(); i++ ) {
-				cout << container[i] << " ";
-			}
-			cout << endl;
-		}
-};
+int readInt () {
+	bool minus = false;
+	int result = 0;
+	char ch;
+	ch = getchar();
+	while (true) {
+		if (ch == '-') break;
+if (ch >= '0' && ch <= '9') break;
+ch = getchar();
+}
+if (ch == '-') minus = true; else result = ch-'0';
+while (true) {
+ch = getchar();
+if (ch < '0' || ch > '9') break;
+result = result*10 + (ch - '0');
+}
+if (minus)
+return -result;
+else
+return result;
+}
 
 class DirectedAcyclicGraph {
 	private:
-		int16_t** _weight;
+		int** _weight;
 		Node* _adj;
 		size_t _nodes_count;
 
 		void init_single_source( int const node_idx ) {
-			for ( size_t i = 0; i < _nodes_count; i++ ) {
-				_adj[i].parent = -1;
-				_adj[i].total_path_weight = INFINITY;
-			}
 			_adj[ node_idx ].total_path_weight = 0;
 		}
 
-		void relax( int const node_a, int const node_b ) {
+		void inline relax( int const node_a, int const node_b ) {
 			if ( _adj[node_b].total_path_weight > _adj[node_a].total_path_weight + _weight[node_a][node_b] ) {
 				_adj[node_b].total_path_weight = _adj[node_a].total_path_weight + _weight[node_a][node_b];
 				_adj[node_b].parent = node_a;
@@ -120,53 +109,39 @@ class DirectedAcyclicGraph {
 		DirectedAcyclicGraph( size_t const nodes_count ) {
 			_adj = new Node[ nodes_count ];
 			_nodes_count = nodes_count;
-			_weight = new int16_t* [ nodes_count ];
+			_weight = new int* [ nodes_count ];
 			
 			for ( size_t i = 0; i < nodes_count; i++ ) {
-				_weight[i] = new int16_t[ nodes_count ];
+				_weight[i] = new int[ nodes_count ];
 			}
 		}
 
-		void add_edge( int const node_a, int const node_b, int16_t const weight ) {
+		void add_edge( int const node_a, int const node_b, int const weight ) {
 			_adj[ node_a ].adj_nodes.insert( node_b );
+			_adj[ node_b ].incl_nodes_count++;
+
 			_weight[ node_a ][ node_b ] = weight;
 		}
 
 		LinkedList topology_sort() {
-			bool discovered[_nodes_count];
-
 			LinkedList list;
-			Queue queue;
-
-			for ( size_t i = 0; i < _nodes_count; i++ ) {
-				Node cur = _adj[i];
-
-				for ( auto it = cur.adj_nodes.begin(); it != cur.adj_nodes.end(); it++ ) {
-					_adj[ *it ].incl_nodes_count++;	
-				}
-			}
+			LinkedList queue;
 
 			for ( size_t i = 0; i < _nodes_count; i++ ) {
 				if ( _adj[i].incl_nodes_count == 0 ) {
-					discovered[i] = true;
 					queue.push_back(i);
 				}
 			}
 
 			while ( !queue.is_empty() ) {
-				int sealed_idx = queue.get();	
+				int sealed_idx = queue.pop_head();	
 				list.push_back( sealed_idx );
 
  				for ( auto it = _adj[ sealed_idx ].adj_nodes.begin(); it != _adj[sealed_idx].adj_nodes.end();  it++ ) {
-					if ( !discovered[*it] ) {
-					
 						_adj[ *it ].incl_nodes_count--;	
 						if ( _adj[ *it ].incl_nodes_count == 0 ) {
-							discovered[ *it ] = true;
 							queue.push_back( *it );
 						}
-					}
-
 				}
 
 			}
@@ -184,6 +159,7 @@ class DirectedAcyclicGraph {
 
 			while ( !sorted_nodes.is_empty() ) {
 				current = sorted_nodes.pop_head();
+
 				for ( auto it = _adj[current].adj_nodes.begin(); it != _adj[current].adj_nodes.end(); it++ ) {
 					relax( current, *it );
 				}
@@ -197,31 +173,31 @@ class DirectedAcyclicGraph {
 };
 
 int main() {
-	size_t nodes_count;
-	size_t edges_count;
+	int nodes_count = readInt();
+	int edges_count = readInt();
 
-	cin >> nodes_count
-		>> edges_count;
+	/*cin >> nodes_count
+		>> edges_count;*/
 
 	DirectedAcyclicGraph graph( nodes_count );	
 
 	for ( size_t i = 0; i < edges_count; i++ ) {
-		int edge_source;
-		int edge_dest;
-		int16_t weight;
+		int edge_source = readInt();
+		int edge_dest = readInt();
+		int weight = readInt();
 
-		cin >> edge_source 
+		/*cin >> edge_source 
 			>> edge_dest
-			>> weight;
+			>> weight;*/
 
 		graph.add_edge( edge_source - 1, edge_dest - 1, -weight );
 	}
 
-	int path_source;
-	int path_dest;
+	int path_source = readInt();
+	int path_dest = readInt();
 
-	cin >> path_source 
-		>> path_dest;
+	/*cin >> path_source 
+		>> path_dest; */
 
 	int shortest_path = -graph.shortest_path_weight(
 		path_source - 1,
@@ -230,9 +206,9 @@ int main() {
 
 
 	if ( shortest_path > 0 ) {
-		cout << shortest_path << endl;
+		cout << shortest_path;
 	} else {
-		cout << "No solution" << endl;
+		cout << "No solution";
 	}
 		
 	return 0;
