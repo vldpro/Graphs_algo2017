@@ -5,6 +5,29 @@
 
 using namespace std;
 
+int readInt () {
+	bool minus = false;
+	int result = 0;
+	char ch;
+	ch = getchar();
+	while (true) {
+		if (ch == '-') break;
+if (ch >= '0' && ch <= '9') break;
+ch = getchar();
+}
+if (ch == '-') minus = true; else result = ch-'0';
+while (true) {
+ch = getchar();
+if (ch < '0' || ch > '9') break;
+result = result*10 + (ch - '0');
+}
+if (minus)
+return -result;
+else
+return result;
+}
+
+
 class Graph {
 	private:
 		unordered_set<int>* adj;
@@ -114,17 +137,18 @@ class Graph {
 };
 
 int main() {
-	size_t nodes_count;	
-	cin >> nodes_count;
+	int nodes_count = readInt();	
+	//cin >> nodes_count;
 
 	Graph graph( nodes_count );	
 
 	for ( int node = 0; node < nodes_count; node++ ) {
-		int adj_node;
-		cin >> adj_node;
+		int adj_node = readInt();
+		//cin >> adj_node;
 		while ( adj_node ) {
 			graph.add_edge( node, adj_node - 1 );
-			cin >> adj_node;
+			//cin >> adj_node;
+			adj_node = readInt();
 		}
 	}
 
