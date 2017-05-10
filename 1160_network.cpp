@@ -1,86 +1,135 @@
 #include <iostream>
+#include <unordered_map>
+#include <queue>
+#include <map>
+#include <sstream>
 
 using namespace std;
 
-template< typename T, class Greater = greater<T> >
-class BinaryHeap {
-	private:
-		long heap_size;
-		T* buffer;
-		
-		int parent( int const node_idx) {
-			return node_idx / 2;
-		}
+static const int INFINITY = 12000000;
+static const int ORPHAN_NODE = -1;
 
-		int left_child( int const node_idx ) {
-			return 2*node_idx + 1;
-		}
+bool compare( pair<int,int> a, pair<int,int> b ) {
+	return a.first > b.first;	
+}
 
-		int right_child( int const node_idx ) {
-			return 2*node_idx + 2;
-		}
+class UndirectedGraph {
+	private:	
 
-		void restore_heap( int const node_idx ) {
-			int lchild = left_child( node_idx );
-			int rchild = right_child( node_idx );
-			int largest = 0;
+		struct GraphNode {
+			int key = INFINITY;
+			int parent = ORPHAN_NODE;
+			map<int, int> adjacents;
+		};
 
-			if ( lchild < heap_size && Greater(buffer[lchild], buffer[node_idx]) ) {
-				largest = lchild;
-			} else largest = node_idx;
-
-			if ( rchild < heap_size && Greater( buffer[rchild], buffer[node_idx]) ) {
-				largest = rchild;
-			}
-
-			if ( largest != node_idx ) {
-				T tmp = buffer[largest];
-				buffer[largest] = buffer[node_idx];
-				buffer[node_idx] = tmp;
-
-				restore_heap( largest );
-			}
-		}
+		GraphNode* _nodes;
+		int _nodes_count;
 
 	public:
-		BinaryHeap( T* buffer_in, long const size ) {
-			buffer = buffer_in;
-			heap_size = size;
 
-			for ( long i = size / 2; i >= 0; i-- ) {
-				restore_heap(i);
+		UndirectedGraph( int const nodes_count ) {
+			_nodes = new GraphNode[ nodes_count ];
+			_nodes_count = nodes_count;
+		}
+
+		void add_edge( int const node_a, int const node_b, int const weight ) {
+			_nodes[ node_a ].adjacents.insert( pair<int,int>(node_b, weight) );
+			_nodes[ node_b ].adjacents.insert( pair<int,int>(node_a, weight) );
+		}
+
+		int get_weight( int const node_a, int const node_b ) {
+			return _nodes[ node_a ].adjacents[ node_b ];
+		}
+
+
+		/* Prim algorithm */
+		void minimal_spanning_tree() {
+			bool discovered[ _nodes_count ] = {};
+			_nodes[0].key = 0;
+
+			priority_queue< pair<int,int>, vector<pair<int,int>>, decltype(&compare) > pqueue(&compare);
+
+			pqueue.push( pair<int,int> (0, 0) );
+
+			int count = _nodes_count;
+
+			while ( !pqueue.empty() ) {
+				int i = pqueue.top().second;
+				//cout << pqueue.top().first;
+				pqueue.pop();
+
+				discovered[i] = true;
+
+				for ( auto it = _nodes[i].adjacents.begin(); it != _nodes[i].adjacents.end(); it++ ) {
+					if ( !discovered[it-> first] && it-> second < _nodes[it-> first].key ) {
+						_nodes[it-> first].parent = i;
+						_nodes[it-> first].key = it-> second;
+						pqueue.push( pair<int,int> (it-> second, it-> first) );
+					}
+				}
 			}
 		}
 
-		T maximum() {
-			return buffer[0];
-		}
+		string traverse() {
+			stringstream ss;
+			int max = 0;
+			for ( int i = 0; i < _nodes_count; i++ ) {
+				for ( auto it = _nodes[i].adjacents.begin(); it != _nodes[i].adjacents.end(); it++ ) {
+					if ( _nodes[ it-> first ].parent == i ) {
+						if ( _nodes[ it->first ].key > max ) max = _nodes[ it-> first ].key;
 
-		T extract_max() {
-			T max = buffer[0];	
+						if ( i  < it-> first ) ss << i + 1 << " " << it-> first + 1 << endl;
+						else ss << it-> first + 1 << " " << i + 1 << endl;
+					}
+				}
+			}
 
-			buffer[0] = buffer[ heap_size - 1 ];
-			heap_size--;
-
-			restore();
-
-			return max;
+			cout << max << endl;
+			return ss.str();
 		}
 		
-		void increase_key( T key, int const i ) {
-			buffer[i] = key;		
-
-			while ( i > 0 && !Greater(buffer[parent(i)], buffer[i]) ) {
-				swap( buffer[i], buffer[parent(i)] );
-				i = parent(i);
-			}
-		}
-
-		void restore() { restore_heap(0); }
 };
 
+int read_int () {
+	bool minus = false;
+	int result = 0;
+	char ch;
+	ch = getchar();
+
+	while (true) {
+		if (ch == '-') break;
+		if (ch >= '0' && ch <= '9') break;
+		ch = getchar();
+	}
+
+	if (ch == '-') minus = true; else result = ch-'0';
+	while (true) {
+		ch = getchar();
+		if (ch < '0' || ch > '9') break;
+		result = result*10 + (ch - '0');
+	}
+
+	return minus ? -result : result;
+}
 
 int main() {
-	
+	int nodes_count = read_int();
+	int edges_count = read_int();
+
+	UndirectedGraph graph( nodes_count );
+
+	for ( int i = 0; i < edges_count; i++ ) {
+		int source = read_int();		
+		int dest = read_int();
+		int weight = read_int();
+
+		graph.add_edge( source - 1, dest - 1, weight );
+	}
+
+	graph.minimal_spanning_tree();
+	string out = graph.traverse();
+	cout << nodes_count - 1 << endl;
+	cout << out;
+
 	return 0;
 }
