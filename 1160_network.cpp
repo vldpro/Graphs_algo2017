@@ -19,7 +19,7 @@ class UndirectedGraph {
 		struct GraphNode {
 			int key = INFINITY;
 			int parent = ORPHAN_NODE;
-			map<int, int> adjacents;
+			unordered_map<int, int> adjacents;
 		};
 
 		GraphNode* _nodes;
@@ -37,49 +37,47 @@ class UndirectedGraph {
 			_nodes[ node_b ].adjacents.insert( pair<int,int>(node_a, weight) );
 		}
 
-		int get_weight( int const node_a, int const node_b ) {
-			return _nodes[ node_a ].adjacents[ node_b ];
-		}
-
 
 		/* Prim algorithm */
 		void minimal_spanning_tree() {
 			bool discovered[ _nodes_count ] = {};
 			_nodes[0].key = 0;
 
-			priority_queue< pair<int,int>, vector<pair<int,int>>, decltype(&compare) > pqueue(&compare);
+			priority_queue< 
+				pair<int,int>, 
+				vector<pair<int,int>>, 
+				decltype(&compare) 
+			> pqueue(&compare);
 
 			pqueue.push( pair<int,int> (0, 0) );
 
-			int count = _nodes_count;
-
 			while ( !pqueue.empty() ) {
 				int i = pqueue.top().second;
-				//cout << pqueue.top().first;
 				pqueue.pop();
 
 				discovered[i] = true;
 
 				for ( auto it = _nodes[i].adjacents.begin(); it != _nodes[i].adjacents.end(); it++ ) {
-					if ( !discovered[it-> first] && it-> second < _nodes[it-> first].key ) {
-						_nodes[it-> first].parent = i;
-						_nodes[it-> first].key = it-> second;
-						pqueue.push( pair<int,int> (it-> second, it-> first) );
-					}
+					if ( discovered[it-> first] ||  it-> second > _nodes[it-> first].key ) continue;
+
+					_nodes[it-> first].parent = i;
+					_nodes[it-> first].key = it-> second;
+
+					pqueue.push( pair<int,int> (it-> second, it-> first) );
 				}
 			}
 		}
 
-		string traverse() {
+		string traverse_mst() {
 			stringstream ss;
 			int max = 0;
+
 			for ( int i = 0; i < _nodes_count; i++ ) {
 				for ( auto it = _nodes[i].adjacents.begin(); it != _nodes[i].adjacents.end(); it++ ) {
 					if ( _nodes[ it-> first ].parent == i ) {
 						if ( _nodes[ it->first ].key > max ) max = _nodes[ it-> first ].key;
 
-						if ( i  < it-> first ) ss << i + 1 << " " << it-> first + 1 << endl;
-						else ss << it-> first + 1 << " " << i + 1 << endl;
+						ss << i + 1 << " " << it-> first + 1 << endl;
 					}
 				}
 			}
@@ -102,7 +100,7 @@ int read_int () {
 		ch = getchar();
 	}
 
-	if (ch == '-') minus = true; else result = ch-'0';
+	if (ch == '-') minus = true; else result = ch - '0';
 	while (true) {
 		ch = getchar();
 		if (ch < '0' || ch > '9') break;
@@ -115,6 +113,7 @@ int read_int () {
 int main() {
 	int nodes_count = read_int();
 	int edges_count = read_int();
+	cin >> nodes_count >> edges_count;
 
 	UndirectedGraph graph( nodes_count );
 
@@ -123,11 +122,14 @@ int main() {
 		int dest = read_int();
 		int weight = read_int();
 
+		cin >> source >> dest >> weight;
+
 		graph.add_edge( source - 1, dest - 1, weight );
 	}
 
 	graph.minimal_spanning_tree();
-	string out = graph.traverse();
+	string out = graph.traverse_mst();
+
 	cout << nodes_count - 1 << endl;
 	cout << out;
 
