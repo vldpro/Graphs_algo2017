@@ -1,8 +1,7 @@
 #include <iostream>
-#include <set>
 #include <vector>
-#include <unordered_set>
 #include <forward_list>
+#include <list>
 
 using namespace std;
 
@@ -13,57 +12,6 @@ struct Node {
 	long total_path_weight = INFINITY;
 	forward_list< pair<int,int> > adj_nodes;
 	long incl_nodes_count = 0;
-};
-
-
-class LinkedList {
-	private:
-		struct ListNode {
-			int node_idx;
-			ListNode* next;
-		};
-
-		ListNode* head = NULL;
-		ListNode* tail = NULL;
-		size_t size = 0;
-
-	public:
-		LinkedList() { }
-
-		void push_back( int const node_idx ) {
-
-			if ( size == 0 ) {
-				head = tail = new ListNode;
-				tail-> next = NULL;
-				tail-> node_idx = node_idx;
-
-			} else {
-				tail-> next = new ListNode;
-				tail = tail-> next;
-
-				tail-> node_idx = node_idx;
-				tail-> next = NULL;
-			}
-
-			size++;
-		}
-
-		int pop_head() {
-			int to_return = head-> node_idx;	
-			head = head-> next;
-			size--;
-
-			return to_return;
-		}
-
-		bool is_empty() {
-			return size == 0;
-		}
-
-		int get_size() {
-			return size;
-		}
-
 };
 
 int readInt () {
@@ -93,14 +41,6 @@ class DirectedAcyclicGraph {
 		Node* _adj;
 		size_t _nodes_count;
 
-		void init_single_source( int const node_idx ) {
-			_adj[ node_idx ].total_path_weight = 0;
-		}
-
-		void inline relax( int const node_a, int const node_b ) {
-			
-		}
-
 	public:
 
 		DirectedAcyclicGraph( size_t const nodes_count ) {
@@ -113,19 +53,20 @@ class DirectedAcyclicGraph {
 			_adj[ node_b ].incl_nodes_count++;
 		}
 
-		LinkedList topology_sort() {
-			LinkedList list;
-			LinkedList queue;
+		list<int> topology_sort() {
+			list<int> queue;
+			list<int> lst;
 
-			for ( size_t i = 0; i < _nodes_count; i++ ) {
+			for ( int i = 0; i < _nodes_count; i++ ) {
 				if ( _adj[i].incl_nodes_count == 0 ) {
 					queue.push_back(i);
 				}
 			}
 
-			while ( !queue.is_empty() ) {
-				int sealed_idx = queue.pop_head();	
-				list.push_back( sealed_idx );
+			while ( !queue.empty() ) {
+				int sealed_idx = queue.front();	
+				queue.pop_front();
+				lst.push_back( sealed_idx );
 
  				for ( auto it = _adj[ sealed_idx ].adj_nodes.begin(); it != _adj[sealed_idx].adj_nodes.end();  it++ ) {
 						_adj[ it-> first ].incl_nodes_count--;	
@@ -136,19 +77,19 @@ class DirectedAcyclicGraph {
 
 			}
 
-			return list;
+			return lst;
 
 		}
 
 		int shortest_path_weight( int const source, int const dest ) {
-			LinkedList sorted_nodes = topology_sort(); 
-
-			init_single_source( source );
+			list<int> sorted_nodes = topology_sort(); 
+			_adj[ source ].total_path_weight = 0;
 
 			int current;
 
-			while ( !sorted_nodes.is_empty() ) {
-				current = sorted_nodes.pop_head();
+			while ( !sorted_nodes.empty() ) {
+				current = sorted_nodes.front();
+				sorted_nodes.pop_front();
 
 				for ( auto it = _adj[current].adj_nodes.begin(); it != _adj[current].adj_nodes.end(); it++ ) {
 					if ( _adj[it-> first].total_path_weight > _adj[current].total_path_weight + it-> second ) {
