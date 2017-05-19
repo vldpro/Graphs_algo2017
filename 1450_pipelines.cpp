@@ -2,6 +2,7 @@
 #include <set>
 #include <vector>
 #include <unordered_set>
+#include <forward_list>
 
 using namespace std;
 
@@ -10,7 +11,7 @@ static const long INFINITY = 120000000;
 struct Node {
 	int parent = -1;
 	long total_path_weight = INFINITY;
-	unordered_set<int> adj_nodes;
+	forward_list< pair<int,int> > adj_nodes;
 	long incl_nodes_count = 0;
 };
 
@@ -89,7 +90,6 @@ return result;
 
 class DirectedAcyclicGraph {
 	private:
-		int** _weight;
 		Node* _adj;
 		size_t _nodes_count;
 
@@ -98,10 +98,7 @@ class DirectedAcyclicGraph {
 		}
 
 		void inline relax( int const node_a, int const node_b ) {
-			if ( _adj[node_b].total_path_weight > _adj[node_a].total_path_weight + _weight[node_a][node_b] ) {
-				_adj[node_b].total_path_weight = _adj[node_a].total_path_weight + _weight[node_a][node_b];
-				_adj[node_b].parent = node_a;
-			}
+			
 		}
 
 	public:
@@ -109,18 +106,11 @@ class DirectedAcyclicGraph {
 		DirectedAcyclicGraph( size_t const nodes_count ) {
 			_adj = new Node[ nodes_count ];
 			_nodes_count = nodes_count;
-			_weight = new int* [ nodes_count ];
-			
-			for ( size_t i = 0; i < nodes_count; i++ ) {
-				_weight[i] = new int[ nodes_count ];
-			}
 		}
 
 		void add_edge( int const node_a, int const node_b, int const weight ) {
-			_adj[ node_a ].adj_nodes.insert( node_b );
+			_adj[ node_a ].adj_nodes.push_front( pair<int,int>(node_b, weight) );
 			_adj[ node_b ].incl_nodes_count++;
-
-			_weight[ node_a ][ node_b ] = weight;
 		}
 
 		LinkedList topology_sort() {
@@ -138,9 +128,9 @@ class DirectedAcyclicGraph {
 				list.push_back( sealed_idx );
 
  				for ( auto it = _adj[ sealed_idx ].adj_nodes.begin(); it != _adj[sealed_idx].adj_nodes.end();  it++ ) {
-						_adj[ *it ].incl_nodes_count--;	
-						if ( _adj[ *it ].incl_nodes_count == 0 ) {
-							queue.push_back( *it );
+						_adj[ it-> first ].incl_nodes_count--;	
+						if ( _adj[ it-> first ].incl_nodes_count == 0 ) {
+							queue.push_back( it-> first );
 						}
 				}
 
@@ -161,7 +151,10 @@ class DirectedAcyclicGraph {
 				current = sorted_nodes.pop_head();
 
 				for ( auto it = _adj[current].adj_nodes.begin(); it != _adj[current].adj_nodes.end(); it++ ) {
-					relax( current, *it );
+					if ( _adj[it-> first].total_path_weight > _adj[current].total_path_weight + it-> second ) {
+						_adj[it-> first].total_path_weight = _adj[current].total_path_weight + it-> second;
+						_adj[it-> first].parent = current;
+					}
 				}
 			}
 
