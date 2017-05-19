@@ -1,5 +1,6 @@
 #include <iostream>
 #include <unordered_map>
+#include <forward_list>
 #include <queue>
 #include <map>
 #include <sstream>
@@ -19,7 +20,7 @@ class UndirectedGraph {
 		struct GraphNode {
 			int key = INFINITY;
 			int parent = ORPHAN_NODE;
-			unordered_map<int, int> adjacents;
+			forward_list< pair<int, int> > adjacents;
 		};
 
 		GraphNode* _nodes;
@@ -33,8 +34,8 @@ class UndirectedGraph {
 		}
 
 		void add_edge( int const node_a, int const node_b, int const weight ) {
-			_nodes[ node_a ].adjacents.insert( pair<int,int>(node_b, weight) );
-			_nodes[ node_b ].adjacents.insert( pair<int,int>(node_a, weight) );
+			_nodes[ node_a ].adjacents.push_front( pair<int,int>(node_b, weight) );
+			_nodes[ node_b ].adjacents.push_front( pair<int,int>(node_a, weight) );
 		}
 
 
@@ -55,6 +56,7 @@ class UndirectedGraph {
 				int i = pqueue.top().second;
 				pqueue.pop();
 
+				if ( discovered[i] ) continue;
 				discovered[i] = true;
 
 				for ( auto it = _nodes[i].adjacents.begin(); it != _nodes[i].adjacents.end(); it++ ) {
@@ -113,7 +115,7 @@ int read_int () {
 int main() {
 	int nodes_count = read_int();
 	int edges_count = read_int();
-	cin >> nodes_count >> edges_count;
+	//cin >> nodes_count >> edges_count;
 
 	UndirectedGraph graph( nodes_count );
 
@@ -122,7 +124,7 @@ int main() {
 		int dest = read_int();
 		int weight = read_int();
 
-		cin >> source >> dest >> weight;
+		//cin >> source >> dest >> weight;
 
 		graph.add_edge( source - 1, dest - 1, weight );
 	}
