@@ -54,12 +54,8 @@ class Graph {
 		}
 
 		void bfs() {
-			bool discovered[ count ];  
+			bool discovered[ count ] = {};  
 			discovered[0] = true;
-
-			for ( size_t i = 1; i < count; i++ ) {
-				discovered[i] = false;
-			}
 
 			bool const red = true;
 			bool const blue = false;
